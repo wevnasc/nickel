@@ -3,6 +3,7 @@ package mongo
 import (
 	"context"
 	"nickel/core/domain"
+	"nickel/core/errors"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -157,7 +158,7 @@ func (m *MongoEntryRepository) Create(entry *domain.Entry) (*domain.Entry, error
 	data, err := m.coll.InsertOne(ctx, entrySchema)
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(errors.InsertData, "not was possible to create the entry", err)
 	}
 
 	if oid, ok := data.InsertedID.(primitive.ObjectID); ok {
@@ -174,7 +175,7 @@ func (m *MongoEntryRepository) List() ([]domain.Entry, error) {
 	cursor, err := m.coll.Find(ctx, bson.D{})
 
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(errors.FindData, "not was possible to query the entries", err)
 	}
 
 	var list EntryListSchema
@@ -183,7 +184,7 @@ func (m *MongoEntryRepository) List() ([]domain.Entry, error) {
 		var entry EntrySchema
 		err := cursor.Decode(&entry)
 		if err != nil {
-			return list.toDomain(), err
+			return list.toDomain(), errors.Wrap(errors.Serialization, "not was to decode the entry from database", err)
 		}
 		list = append(list, entry)
 	}
