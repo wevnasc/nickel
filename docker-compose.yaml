@@ -1,0 +1,11 @@
+version: '3'
+services:
+  db:
+    image: 'mongo'
+    container_name: nickel_db
+    environment:
+      - MONGO_INITDB_DATABASE=nickel_db
+      - MONGO_INITDB_ROOT_USERNAME=nickel
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    ports:
+      - '27017-27019:27017-27019'
