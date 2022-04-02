@@ -46,7 +46,6 @@ func (h *EntryHandlers) Create() http.HandlerFunc {
 			return err
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(res)
 		return nil
@@ -68,7 +67,6 @@ func (h *EntryHandlers) List() http.HandlerFunc {
 			return err
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
 		return nil

@@ -9,6 +9,7 @@ import (
 
 func ListenEntityRouters(r *chi.Mux, h *handlers.EntryHandlers) {
 	r.Use(middleware.Logger)
+	r.Use(middleware.SetHeader("Content-Type", "application/json"))
 
 	r.Get("/", h.List())
 	r.Post("/", h.Create())
