@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
+	"nickel/core/errors"
 	"nickel/core/ports"
 	"nickel/http/in"
 	"nickel/http/out"
@@ -22,55 +22,55 @@ func NewEntryHandler(service ports.EntryServicePort, serializer ports.Serializer
 }
 
 func (h *EntryHandlers) Create() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+
+	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
 		entry := in.Entry{}
 		err := json.DecodeBody(h.serializer, r.Body, &entry)
 
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			return errors.Wrap(
+				errors.Serialization,
+				"not was possible decode entry invalid body",
+				err,
+			)
 		}
 
 		newEntry, err := h.service.Create(entry.Domain())
-
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			return err
 		}
 
 		out := out.EntryFrom(newEntry)
 		res, err := h.serializer.Encode(out)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			return err
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		w.Write(res)
-
-	}
+		return nil
+	})
 }
 
 func (h *EntryHandlers) List() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
 		entries, err := h.service.List()
 
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			return err
 		}
 
 		out := out.EntriesListFrom(entries)
 		res, err := h.serializer.Encode(out)
+
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			return
+			return err
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
-	}
+		return nil
+	})
 }

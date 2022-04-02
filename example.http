@@ -8,5 +8,5 @@ content-type: application/json
 	"Description": "Water Bill",
 	"Amount":      150.00,
 	"Tags":        ["water", "tax"],
-	"Type":        "EXPENSE"
+	"Type":        "EX"
 }

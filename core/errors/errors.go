@@ -33,5 +33,5 @@ func Wrap(errorType ErrorType, message string, reason error) *AppError {
 }
 
 func (e *AppError) Error() string {
-	return fmt.Sprintf("%s: %s", e.Type, e.Message)
+	return fmt.Sprintf("%s: %s; %v", e.Type, e.Message, e.Reason)
 }
