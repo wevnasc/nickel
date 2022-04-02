@@ -13,4 +13,5 @@ func ListenEntityRouters(r *chi.Mux, h *handlers.EntryHandlers) {
 
 	r.Get("/", h.List())
 	r.Post("/", h.Create())
+	r.Delete("/{id}", h.Delete())
 }

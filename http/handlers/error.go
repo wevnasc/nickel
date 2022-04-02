@@ -15,10 +15,12 @@ type HttpError struct {
 }
 
 var ErrorStatusCode = map[e.ErrorType]int{
-	e.NotFound:      http.StatusNotFound,
-	e.InsertData:    http.StatusBadRequest,
-	e.FindData:      http.StatusBadRequest,
-	e.Serialization: http.StatusBadRequest,
+	e.NotFound:        http.StatusNotFound,
+	e.InsertData:      http.StatusBadRequest,
+	e.FindData:        http.StatusBadRequest,
+	e.Serialization:   http.StatusBadRequest,
+	e.InvalidIdentity: http.StatusBadRequest,
+	e.DeleteData:      http.StatusBadRequest,
 }
 
 func ErrorHandler(serializer ports.SerializerPort, handler ErrorHandlerFunc) http.HandlerFunc {
@@ -30,16 +32,21 @@ func ErrorHandler(serializer ports.SerializerPort, handler ErrorHandlerFunc) htt
 		}
 
 		if appErr, ok := err.(*e.AppError); ok {
-			log.Println(appErr)
+			code, exists := ErrorStatusCode[appErr.Type]
+
+			if !exists {
+				log.Fatalf("Not declared error type %s\n", appErr.Type)
+			}
 
 			body := &HttpError{
-				Code:    ErrorStatusCode[appErr.Type],
+				Code:    code,
 				Message: appErr.Message,
 			}
 
 			res, _ := serializer.Encode(body)
-			w.WriteHeader(ErrorStatusCode[appErr.Type])
+			w.WriteHeader(code)
 			w.Write(res)
+			log.Println(appErr)
 			return
 		}
 

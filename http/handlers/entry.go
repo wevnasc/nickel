@@ -7,6 +7,8 @@ import (
 	"nickel/http/in"
 	"nickel/http/out"
 	"nickel/serializer/json"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type EntryHandlers struct {
@@ -22,7 +24,6 @@ func NewEntryHandler(service ports.EntryServicePort, serializer ports.Serializer
 }
 
 func (h *EntryHandlers) Create() http.HandlerFunc {
-
 	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
 		entry := in.Entry{}
 		err := json.DecodeBody(h.serializer, r.Body, &entry)
@@ -69,6 +70,20 @@ func (h *EntryHandlers) List() http.HandlerFunc {
 
 		w.WriteHeader(http.StatusOK)
 		w.Write(res)
+		return nil
+	})
+}
+
+func (h *EntryHandlers) Delete() http.HandlerFunc {
+	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
+		ID := chi.URLParam(r, "id")
+		err := h.service.Delete(ID)
+
+		if err != nil {
+			return err
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 		return nil
 	})
 }

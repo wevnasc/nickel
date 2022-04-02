@@ -5,10 +5,12 @@ import "fmt"
 type ErrorType string
 
 const (
-	NotFound      ErrorType = "NotFound"
-	InsertData    ErrorType = "InsertData"
-	FindData      ErrorType = "FindData"
-	Serialization ErrorType = "Serialization"
+	NotFound        ErrorType = "NotFound"
+	InsertData      ErrorType = "InsertData"
+	FindData        ErrorType = "FindData"
+	Serialization   ErrorType = "Serialization"
+	InvalidIdentity ErrorType = "InvalidIdentity"
+	DeleteData      ErrorType = "DeleteData"
 )
 
 type AppError struct {

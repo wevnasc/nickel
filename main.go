@@ -7,7 +7,8 @@ import (
 	"nickel/env"
 	"nickel/http/handlers"
 	"nickel/http/routers"
-	"nickel/repositories/mongo"
+	"nickel/repositories/config"
+	"nickel/repositories/entry/mongo"
 	"nickel/serializer/json"
 
 	"github.com/go-chi/chi/v5"
@@ -16,7 +17,7 @@ import (
 func run() error {
 	r := chi.NewRouter()
 	env := env.NewEnv("dev")
-	client, err := mongo.NewMongoClient(env.GetProp("DB_URI"), 15)
+	client, err := config.NewMongoClient(env.GetProp("DB_URI"), 15)
 
 	if err != nil {
 		log.Println("error to connect with mongo db")

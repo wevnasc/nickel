@@ -1,7 +1,9 @@
 package services
 
 import (
+	"fmt"
 	"nickel/core/domain"
+	"nickel/core/errors"
 	"nickel/core/ports"
 )
 
@@ -14,21 +16,20 @@ func NewEntryService(repo ports.EntryRepositoryPort) ports.EntryServicePort {
 }
 
 func (s *EntryServiceAdapter) Create(entry *domain.Entry) (*domain.Entry, error) {
-	entry, err := s.repo.Create(entry)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return entry, nil
+	return s.repo.Create(entry)
 }
 
 func (s *EntryServiceAdapter) List() ([]domain.Entry, error) {
-	entries, err := s.repo.List()
+	return s.repo.List()
+}
+
+func (s EntryServiceAdapter) Delete(id string) error {
+
+	_, err := s.repo.Get(id)
 
 	if err != nil {
-		return nil, err
+		return errors.New(errors.NotFound, fmt.Sprintf("the entry with id %s was not found", id))
 	}
 
-	return entries, nil
+	return s.repo.Delete(id)
 }
