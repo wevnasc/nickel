@@ -8,7 +8,8 @@ import (
 	"nickel/http/handlers"
 	"nickel/http/routers"
 	"nickel/repositories/config"
-	"nickel/repositories/entry/mongo"
+	"nickel/repositories/mongo/entry"
+	"nickel/repositories/mongo/tag"
 	"nickel/serializer/json"
 
 	"github.com/go-chi/chi/v5"
@@ -24,9 +25,10 @@ func run() error {
 		return err
 	}
 
-	repo := mongo.NewMongoEntryRepository(client, env.GetProp("DB_NAME"), 10)
+	repoE := entry.NewMongoEntryRepository(client, env.GetProp("DB_NAME"), 10)
+	repoT := tag.NewMongoTagRepository(client, env.GetProp("DB_NAME"), 10)
 	serializer := json.NewJsonSerializer()
-	service := services.NewEntryService(repo)
+	service := services.NewEntryService(repoE, repoT)
 	handlers := handlers.NewEntryHandler(service, serializer)
 
 	routers.ListenEntityRouters(r, handlers)

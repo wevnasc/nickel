@@ -1,4 +1,4 @@
-package mongo
+package entry
 
 import (
 	"nickel/core/domain"

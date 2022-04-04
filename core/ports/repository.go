@@ -8,3 +8,8 @@ type EntryRepositoryPort interface {
 	Get(id string) (*domain.Entry, error)
 	Delete(id string) error
 }
+
+type TagRepositoryPort interface {
+	CreateMany(tag []domain.Tag) ([]domain.Tag, error)
+	GetByNames(names []string) ([]domain.Tag, error)
+}
