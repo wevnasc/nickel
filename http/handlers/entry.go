@@ -3,20 +3,21 @@ package handlers
 import (
 	"net/http"
 	"nickel/core/errors"
-	"nickel/core/ports"
+	"nickel/core/services"
 	"nickel/http/in"
 	"nickel/http/out"
+	"nickel/serializer"
 	"nickel/serializer/json"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type EntryHandlers struct {
-	service    ports.EntryServicePort
-	serializer ports.SerializerPort
+	service    services.EntryService
+	serializer serializer.Serializer
 }
 
-func NewEntryHandler(service ports.EntryServicePort, serializer ports.SerializerPort) *EntryHandlers {
+func NewEntryHandler(service services.EntryService, serializer serializer.Serializer) *EntryHandlers {
 	return &EntryHandlers{
 		service:    service,
 		serializer: serializer,

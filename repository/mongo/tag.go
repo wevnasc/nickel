@@ -1,9 +1,9 @@
-package tag
+package mongo
 
 import (
 	"nickel/core/domain"
 	"nickel/core/errors"
-	"nickel/repositories/config"
+	"nickel/repository/config"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -11,21 +11,68 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type MongoTagRepository struct {
+type Tag struct {
+	ID   primitive.ObjectID `bson:"_id"`
+	Name string             `bson:"name"`
+}
+
+type TagList []Tag
+
+func tagFrom(tag *domain.Tag) *Tag {
+	ID, _ := primitive.ObjectIDFromHex(tag.ID)
+
+	if ID == primitive.NilObjectID {
+		ID = primitive.NewObjectID()
+	}
+
+	return &Tag{
+		ID:   ID,
+		Name: tag.Name,
+	}
+}
+
+func (s *Tag) toDomain() *domain.Tag {
+	return &domain.Tag{
+		ID:   s.ID.Hex(),
+		Name: s.Name,
+	}
+}
+
+func tagsFrom(tags []domain.Tag) TagList {
+	list := make(TagList, len(tags))
+
+	for idx, t := range tags {
+
+		list[idx] = *tagFrom(&t)
+	}
+
+	return list
+}
+
+func (s TagList) toDomain() []domain.Tag {
+	list := make([]domain.Tag, len(s))
+	for idx, t := range s {
+		tag := t.toDomain()
+		list[idx] = *tag
+	}
+	return list
+}
+
+type TagRepository struct {
 	timeout time.Duration
 	client  *mongo.Client
 	coll    *mongo.Collection
 }
 
-func NewMongoTagRepository(client *mongo.Client, database string, timeout time.Duration) *MongoTagRepository {
-	return &MongoTagRepository{
+func NewTagRepository(client *mongo.Client, database string, timeout time.Duration) *TagRepository {
+	return &TagRepository{
 		client:  client,
 		timeout: timeout,
 		coll:    client.Database(database).Collection("tags"),
 	}
 }
 
-func (m *MongoTagRepository) CreateMany(tags []domain.Tag) ([]domain.Tag, error) {
+func (m *TagRepository) CreateMany(tags []domain.Tag) ([]domain.Tag, error) {
 	ctx, cancel := config.TimeoutContext(m.timeout)
 	defer cancel()
 
@@ -52,7 +99,7 @@ func (m *MongoTagRepository) CreateMany(tags []domain.Tag) ([]domain.Tag, error)
 	return schemaList.toDomain(), nil
 }
 
-func (m *MongoTagRepository) GetByNames(names []string) ([]domain.Tag, error) {
+func (m *TagRepository) GetByNames(names []string) ([]domain.Tag, error) {
 	ctx, cancel := config.TimeoutContext(m.timeout)
 	defer cancel()
 
@@ -62,10 +109,10 @@ func (m *MongoTagRepository) GetByNames(names []string) ([]domain.Tag, error) {
 		return nil, errors.Wrap(errors.FindData, "not was possible to query data", cursor.Err())
 	}
 
-	var list TagListSchema
+	var list TagList
 
 	for cursor.Next(ctx) {
-		var tag TagSchema
+		var tag Tag
 		err := cursor.Decode(&tag)
 		if err != nil {
 			return list.toDomain(), errors.Wrap(errors.Serialization, "not was to decode the tag from database", err)

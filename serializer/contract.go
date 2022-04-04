@@ -1,6 +1,6 @@
-package ports
+package serializer
 
-type SerializerPort interface {
+type Serializer interface {
 	Decode(input []byte, out interface{}) error
 	Encode(input interface{}) ([]byte, error)
 }

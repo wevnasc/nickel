@@ -4,30 +4,29 @@ import (
 	"fmt"
 	"nickel/core/domain"
 	"nickel/core/errors"
-	"nickel/core/ports"
+	"nickel/repository"
 )
 
 type EntryServiceAdapter struct {
-	entryRepo ports.EntryRepositoryPort
-	tagRepo   ports.TagRepositoryPort
+	entryRepo repository.Entry
+	tagRepo   repository.Tag
 }
 
-func NewEntryService(entryRepo ports.EntryRepositoryPort, tagRepo ports.TagRepositoryPort) ports.EntryServicePort {
+func NewEntryService(entryRepo repository.Entry, tagRepo repository.Tag) EntryService {
 	return &EntryServiceAdapter{
 		entryRepo: entryRepo,
 		tagRepo:   tagRepo,
 	}
 }
 
-func (s *EntryServiceAdapter) findOrCreateTags(tags []domain.Tag) ([]domain.Tag, error) {
-	names := domain.Names(tags)
-	tagsFound, err := s.tagRepo.GetByNames(names)
+func (s *EntryServiceAdapter) findOrCreateTags(tags domain.TagList) ([]domain.Tag, error) {
+	tagsFound, err := s.tagRepo.GetByNames(tags.Names())
 
 	if err != nil {
 		return nil, err
 	}
 
-	missing := domain.MissingTags(tagsFound, tags)
+	missing := tags.Diff(tagsFound)
 	var newTags []domain.Tag
 
 	if len(missing) > 0 {

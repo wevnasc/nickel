@@ -1,7 +1,7 @@
 GET http://localhost:3000/ HTTP/1.1
 
 ###
-DELETE http://localhost:3000/624a9748055d3d95b881e0eb HTTP/1.1
+DELETE http://localhost:3000/624b6d1d2f09e07a3097a315 HTTP/1.1
 
 ###
 POST http://localhost:3000/ HTTP/1.1
@@ -10,6 +10,6 @@ content-type: application/json
 {
 	"Description": "Water Bill",
 	"Amount":      150.00,
-	"Tags":        ["water", "tax", "fixed"],
-	"Type":        "EX"
+	"Tags":        ["power"],
+	"Type":        "EXPENSE"
 }

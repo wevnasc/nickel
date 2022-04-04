@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 	e "nickel/core/errors"
-	"nickel/core/ports"
+	"nickel/serializer"
 )
 
 type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request) error
@@ -23,7 +23,7 @@ var ErrorStatusCode = map[e.ErrorType]int{
 	e.DeleteData:      http.StatusBadRequest,
 }
 
-func ErrorHandler(serializer ports.SerializerPort, handler ErrorHandlerFunc) http.HandlerFunc {
+func ErrorHandler(serializer serializer.Serializer, handler ErrorHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := handler(w, r)
 
