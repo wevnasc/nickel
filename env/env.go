@@ -14,8 +14,8 @@ func getKeyValue(property string) (string, string) {
 	return keyValue[0], keyValue[1]
 }
 
-func loadFile(fileName string) (map[string]string, error) {
-	filePath := fmt.Sprintf("./env/%s.env", fileName)
+func loadFile(rootPath, fileName string) (map[string]string, error) {
+	filePath := fmt.Sprintf("%senv/%s.env", rootPath, fileName)
 	file, err := os.Open(filePath)
 
 	if err != nil {
@@ -43,8 +43,8 @@ type Env struct {
 	local map[string]string
 }
 
-func NewEnv(fileName string) *Env {
-	props, err := loadFile(fileName)
+func NewEnv(rootPath string, fileName string) *Env {
+	props, err := loadFile(rootPath, fileName)
 
 	if err != nil {
 		log.Println(err)

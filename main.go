@@ -3,35 +3,24 @@ package main
 import (
 	"log"
 	"net/http"
-	"nickel/core/services"
+	"nickel/app"
 	"nickel/env"
 	"nickel/http/handlers"
 	"nickel/http/routers"
-	"nickel/repository/config"
-	"nickel/repository/mongo"
-	"nickel/serializer/json"
-
-	"github.com/go-chi/chi/v5"
 )
 
 func run() error {
-	r := chi.NewRouter()
-	env := env.NewEnv("dev")
-	client, err := config.NewMongoClient(env.GetProp("DB_URI"), 15)
+	env := env.NewEnv("./", "dev")
+	app, err := app.NewApp(env.GetProp("DB_NAME"), env.GetProp("DB_URI"))
 
 	if err != nil {
-		log.Println("error to connect with mongo db")
 		return err
 	}
 
-	repoE := mongo.NewEntryRepository(client, env.GetProp("DB_NAME"), 10)
-	repoT := mongo.NewTagRepository(client, env.GetProp("DB_NAME"), 10)
-	serializer := json.NewJsonSerializer()
-	service := services.NewEntryService(repoE, repoT)
-	handlers := handlers.NewEntryHandler(service, serializer)
+	entryHandlers := handlers.NewEntryHandler(app.EntryService, app.Serializer)
 
-	routers.ListenEntityRouters(r, handlers)
-	return http.ListenAndServe(env.GetProp("PORT"), r)
+	routers.ListenEntityRouters(app.Router, entryHandlers)
+	return http.ListenAndServe(env.GetProp("PORT"), app.Router)
 }
 
 func main() {

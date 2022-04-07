@@ -57,7 +57,6 @@ func (h *EntryHandlers) Create() http.HandlerFunc {
 func (h *EntryHandlers) List() http.HandlerFunc {
 	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
 		entries, err := h.service.List()
-
 		if err != nil {
 			return err
 		}

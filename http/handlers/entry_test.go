@@ -1,0 +1,116 @@
+package handlers
+
+import (
+	"context"
+	"net/http"
+	"net/http/httptest"
+	"nickel/app"
+	"nickel/env"
+	"nickel/http/in"
+	"nickel/http/out"
+	"nickel/repository/config"
+	"nickel/repository/mongo"
+	"nickel/serializer/json"
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson/primitive"
+)
+
+var testEnv *env.Env
+var testApp *app.App
+var entryHandlers *EntryHandlers
+
+func TestMain(m *testing.M) {
+	testEnv = env.NewEnv("../../", "test")
+	testApp, _ = app.NewApp(testEnv.GetProp("DB_NAME"), testEnv.GetProp("DB_URI"))
+
+	entryHandlers = NewEntryHandler(testApp.EntryService, testApp.Serializer)
+	code := m.Run()
+	os.Exit(code)
+}
+
+func cleanDatabase() {
+	ctx, cancel := config.TimeoutContext(3)
+	defer cancel()
+	testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Drop(ctx)
+}
+
+func createEntry() *mongo.Entry {
+	coll := testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Collection("entries")
+	entry := mongo.Entry{
+		ID:          primitive.NewObjectID(),
+		Description: "Ice cream",
+		Amount:      4.5,
+		Tags:        []mongo.EntryTag{{Name: "Grocery"}},
+		Type:        "Expense",
+	}
+	coll.InsertOne(context.Background(), entry)
+	return &entry
+}
+
+func TestCreateEntryWithSuccess(t *testing.T) {
+	payload := in.Entry{
+		Description: "Ice cream",
+		Amount:      4.5,
+		Tags:        []string{"Grocery"},
+		Type:        "Expense",
+	}
+
+	data, err := json.EncodeBody(testApp.Serializer, payload)
+
+	assert.Nil(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/", data)
+	w := httptest.NewRecorder()
+
+	createHandler := entryHandlers.Create()
+	createHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	var entry out.Entry
+	json.DecodeBody(testApp.Serializer, res.Body, &entry)
+
+	assert.Equal(t, http.StatusCreated, res.StatusCode)
+	assert.NotNil(t, entry.ID)
+	assert.Equal(t, payload.Description, entry.Description)
+	assert.Equal(t, payload.Amount, entry.Amount)
+	assert.Equal(t, payload.Type, entry.Type)
+	assert.Equal(t, payload.Tags, entry.Tags)
+
+	cleanDatabase()
+}
+
+func TestListEntriesWithSuccess(t *testing.T) {
+	savedEntry := createEntry()
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+
+	listHandler := entryHandlers.List()
+	listHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	var entries []out.Entry
+	json.DecodeBody(testApp.Serializer, res.Body, &entries)
+
+	assert.NotEmpty(t, entries)
+
+	entry := entries[0]
+	assert.Equal(t, http.StatusOK, res.StatusCode)
+	assert.Equal(t, savedEntry.ID.Hex(), entry.ID)
+	assert.Equal(t, savedEntry.Description, entry.Description)
+	assert.Equal(t, savedEntry.Amount, entry.Amount)
+	assert.Equal(t, savedEntry.Type, entry.Type)
+
+	for idx, tag := range savedEntry.Tags {
+		assert.Equal(t, tag.Name, entry.Tags[idx])
+	}
+
+	cleanDatabase()
+}
