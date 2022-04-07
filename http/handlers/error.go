@@ -46,7 +46,6 @@ func ErrorHandler(serializer serializer.Serializer, handler ErrorHandlerFunc) ht
 			res, _ := serializer.Encode(body)
 			w.WriteHeader(code)
 			w.Write(res)
-			log.Println(appErr)
 			return
 		}
 

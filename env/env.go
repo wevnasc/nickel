@@ -47,7 +47,7 @@ func NewEnv(rootPath string, fileName string) *Env {
 	props, err := loadFile(rootPath, fileName)
 
 	if err != nil {
-		log.Println(err)
+		log.Fatal(err)
 	}
 
 	return &Env{local: props}
