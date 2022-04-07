@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"nickel/app"
@@ -14,6 +15,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
@@ -34,7 +36,7 @@ func TestMain(m *testing.M) {
 func cleanDatabase() {
 	ctx, cancel := config.TimeoutContext(3)
 	defer cancel()
-	testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Drop(ctx)
+	testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Collection("entries").Drop(ctx)
 }
 
 func createEntry() *mongo.Entry {
@@ -43,7 +45,7 @@ func createEntry() *mongo.Entry {
 		ID:          primitive.NewObjectID(),
 		Description: "Ice cream",
 		Amount:      4.5,
-		Tags:        []mongo.EntryTag{{Name: "Grocery"}},
+		Tags:        []mongo.EntryTag{{ID: primitive.NewObjectID(), Name: "Grocery"}},
 		Type:        "Expense",
 	}
 	coll.InsertOne(context.Background(), entry)
@@ -112,5 +114,26 @@ func TestListEntriesWithSuccess(t *testing.T) {
 		assert.Equal(t, tag.Name, entry.Tags[idx])
 	}
 
+	cleanDatabase()
+}
+
+func TestDeleteEntryWithSuccess(t *testing.T) {
+	savedEntry := createEntry()
+	ID := savedEntry.ID.Hex()
+	uri := fmt.Sprintf("/%s", ID)
+	req := httptest.NewRequest(http.MethodDelete, uri, nil)
+
+	ctx := chi.NewRouteContext()
+	ctx.URLParams.Add("id", ID)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
+
+	w := httptest.NewRecorder()
+
+	deleteHandler := entryHandlers.Delete()
+	deleteHandler(w, req)
+
+	res := w.Result()
+
+	assert.Equal(t, http.StatusNoContent, res.StatusCode)
 	cleanDatabase()
 }

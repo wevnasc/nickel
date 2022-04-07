@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"nickel/core/errors"
 	"nickel/core/services"
@@ -77,6 +78,7 @@ func (h *EntryHandlers) List() http.HandlerFunc {
 func (h *EntryHandlers) Delete() http.HandlerFunc {
 	return ErrorHandler(h.serializer, func(w http.ResponseWriter, r *http.Request) error {
 		ID := chi.URLParam(r, "id")
+		log.Println(ID)
 		err := h.service.Delete(ID)
 
 		if err != nil {
