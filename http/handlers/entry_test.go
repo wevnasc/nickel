@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"nickel/app"
+	"nickel/core/domain"
 	"nickel/env"
 	"nickel/http/in"
 	"nickel/http/out"
 	"nickel/repository/config"
-	"nickel/repository/mongo"
 	"nickel/serializer/json"
 	"os"
 	"testing"
@@ -36,20 +36,22 @@ func TestMain(m *testing.M) {
 func cleanDatabase() {
 	ctx, cancel := config.TimeoutContext(3)
 	defer cancel()
-	testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Collection("entries").Drop(ctx)
+	testApp.Mongo.
+		Database(testEnv.GetProp("DB_NAME")).
+		Collection("entries").
+		Drop(ctx)
 }
 
-func createEntry() *mongo.Entry {
-	coll := testApp.Mongo.Database(testEnv.GetProp("DB_NAME")).Collection("entries")
-	entry := mongo.Entry{
-		ID:          primitive.NewObjectID(),
+func createEntry() *domain.Entry {
+	entry := domain.Entry{
+		ID:          primitive.NewObjectID().Hex(),
 		Description: "Ice cream",
 		Amount:      4.5,
-		Tags:        []mongo.EntryTag{{ID: primitive.NewObjectID(), Name: "Grocery"}},
+		Tags:        []domain.Tag{{ID: primitive.NewObjectID().Hex(), Name: "Grocery"}},
 		Type:        "Expense",
 	}
-	coll.InsertOne(context.Background(), entry)
-	return &entry
+	newEntry, _ := testApp.EntryRepo.Create(&entry)
+	return newEntry
 }
 
 func TestCreateEntryWithSuccess(t *testing.T) {
@@ -105,10 +107,10 @@ func TestListEntriesWithSuccess(t *testing.T) {
 
 	entry := entries[0]
 	assert.Equal(t, http.StatusOK, res.StatusCode)
-	assert.Equal(t, savedEntry.ID.Hex(), entry.ID)
+	assert.Equal(t, savedEntry.ID, entry.ID)
 	assert.Equal(t, savedEntry.Description, entry.Description)
 	assert.Equal(t, savedEntry.Amount, entry.Amount)
-	assert.Equal(t, savedEntry.Type, entry.Type)
+	assert.Equal(t, string(savedEntry.Type), entry.Type)
 
 	for idx, tag := range savedEntry.Tags {
 		assert.Equal(t, tag.Name, entry.Tags[idx])
@@ -136,7 +138,7 @@ func TestEmptyEntriesWithSuccess(t *testing.T) {
 
 func TestDeleteEntryWithSuccess(t *testing.T) {
 	savedEntry := createEntry()
-	ID := savedEntry.ID.Hex()
+	ID := savedEntry.ID
 	uri := fmt.Sprintf("/%s", ID)
 	req := httptest.NewRequest(http.MethodDelete, uri, nil)
 
