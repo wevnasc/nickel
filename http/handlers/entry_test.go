@@ -117,6 +117,23 @@ func TestListEntriesWithSuccess(t *testing.T) {
 	cleanDatabase()
 }
 
+func TestEmptyEntriesWithSuccess(t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	w := httptest.NewRecorder()
+
+	listHandler := entryHandlers.List()
+	listHandler(w, req)
+
+	res := w.Result()
+	defer res.Body.Close()
+
+	var entries []out.Entry
+	json.DecodeBody(testApp.Serializer, res.Body, &entries)
+
+	assert.Empty(t, entries)
+	cleanDatabase()
+}
+
 func TestDeleteEntryWithSuccess(t *testing.T) {
 	savedEntry := createEntry()
 	ID := savedEntry.ID.Hex()
@@ -135,5 +152,25 @@ func TestDeleteEntryWithSuccess(t *testing.T) {
 	res := w.Result()
 
 	assert.Equal(t, http.StatusNoContent, res.StatusCode)
+	cleanDatabase()
+}
+
+func TestDeleteEntryNotFound(t *testing.T) {
+	ID := primitive.NewObjectID().Hex()
+	uri := fmt.Sprintf("/%s", ID)
+	req := httptest.NewRequest(http.MethodDelete, uri, nil)
+
+	ctx := chi.NewRouteContext()
+	ctx.URLParams.Add("id", ID)
+	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, ctx))
+
+	w := httptest.NewRecorder()
+
+	deleteHandler := entryHandlers.Delete()
+	deleteHandler(w, req)
+
+	res := w.Result()
+
+	assert.Equal(t, http.StatusNotFound, res.StatusCode)
 	cleanDatabase()
 }
